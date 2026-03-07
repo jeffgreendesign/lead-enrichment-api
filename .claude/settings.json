@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ruff check*)",
+      "Bash(ruff format*)",
+      "Bash(pytest*)",
+      "Bash(python -m pytest*)",
+      "Bash(mypy *)",
+      "Bash(pip install*)",
+      "Bash(uvicorn *)",
+      "Bash(fastapi dev*)",
+      "Bash(bash scripts/security-check.sh*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(gcloud run services delete*)",
+      "Bash(curl *)"
+    ]
+  }
+}
