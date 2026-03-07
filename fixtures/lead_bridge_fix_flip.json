@@ -1,0 +1,18 @@
+{
+  "lead_id": "lead_001",
+  "submitted_at": "2026-03-07T09:15:00Z",
+  "first_name": "Marcus",
+  "last_name": "Bellamy",
+  "email": "marcus.bellamy@example-investors.com",
+  "phone": "404-555-0182",
+  "property_address": "2847 Glenwood Ave SE",
+  "property_city": "Atlanta",
+  "property_state": "GA",
+  "property_type": "Single Family",
+  "loan_amount_requested": 285000,
+  "purchase_price": 195000,
+  "estimated_arv": 385000,
+  "notes": "Looking to acquire and rehab this property. Already have contractors lined up. Need to close fast — seller wants 21 days. Have done 6 flips in the last 3 years in Atlanta metro.",
+  "source": "Google Ads",
+  "utm_campaign": "bridge-loan-atl-q1"
+}
