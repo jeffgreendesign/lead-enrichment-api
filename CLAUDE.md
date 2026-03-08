@@ -176,3 +176,4 @@ These choices are intentional. Do not suggest alternatives unless explicitly ask
 | `ANTHROPIC_MODEL`  | No       | `claude-sonnet-4-6`  | Model for LLM inference    |
 | `LOG_LEVEL`        | No       | `INFO`               | Python logging level       |
 | `PORT`             | No       | `8080`               | Server port (Cloud Run)    |
+| `GCS_FAILED_LEADS_BUCKET` | No | —               | GCS bucket for dead-letter failed leads |

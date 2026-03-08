@@ -12,6 +12,7 @@ dependencies = [
     "anthropic>=0.84.0",
     "pydantic>=2.10.0",
     "uvicorn[standard]>=0.34.0",
+    "google-cloud-storage>=2.18.0",
 ]
 
 [project.optional-dependencies]
@@ -46,4 +47,8 @@ warn_unused_configs = true
 
 [[tool.mypy.overrides]]
 module = ["anthropic.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["google.cloud.*"]
 ignore_missing_imports = true

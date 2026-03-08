@@ -11,7 +11,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
-from .enrichment import enrich_lead
+from .enrichment import _write_to_gcs_failed, enrich_lead
 from .models import EnrichedLeadResponse, LeadWebhookPayload
 
 logging.basicConfig(
@@ -102,12 +102,14 @@ async def enrich_lead_endpoint(
     try:
         result = enrich_lead(payload, client)
     except ValueError as e:
+        _write_to_gcs_failed(payload, "llm_parse_error", str(e))
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail={"error": "llm_parse_error", "message": str(e)},
         )
     except anthropic.APIError as e:
         logger.error("Anthropic API error for lead %s: %s", payload.lead_id, e)
+        _write_to_gcs_failed(payload, "upstream_api_error", str(e))
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail={"error": "upstream_api_error", "message": str(e)},
