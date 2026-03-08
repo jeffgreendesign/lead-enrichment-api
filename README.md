@@ -69,10 +69,21 @@ lead-enrichment-api/
 │       ├── models.py        # Pydantic models: payload, LLM output, response
 │       ├── enrichment.py    # LLM call + parse + validation logic
 │       └── prompts.py       # System prompt + user prompt builder
+├── tests/
+│   ├── conftest.py          # Shared fixtures and test client setup
+│   ├── test_health.py       # Health endpoint tests
+│   └── test_models.py       # Pydantic model validation tests
 ├── fixtures/                # Sample lead payloads for testing
+├── scripts/
+│   └── security-check.sh   # Pre-commit secret and safety scanner
+├── .github/
+│   └── workflows/
+│       └── ci.yml           # Lint, type-check, security scan, test
 ├── Dockerfile               # Cloud Run-optimized, python:3.12-slim, non-root
 ├── pyproject.toml           # Dependencies, build config, ruff/pytest settings
+├── .pre-commit-config.yaml  # Ruff, security, and standard hooks
 ├── .env.example
+├── CHANGELOG.md
 └── README.md
 ```
 

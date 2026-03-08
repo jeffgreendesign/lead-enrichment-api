@@ -1,0 +1,18 @@
+{
+  "lead_id": "lead_003",
+  "submitted_at": "2026-03-07T11:05:00Z",
+  "first_name": "Tyler",
+  "last_name": "Nguyen",
+  "email": "tyler.nguyen@gmail.com",
+  "phone": "480-555-0291",
+  "property_address": null,
+  "property_city": "Phoenix",
+  "property_state": "AZ",
+  "property_type": null,
+  "loan_amount_requested": null,
+  "purchase_price": null,
+  "estimated_arv": null,
+  "notes": "I've been watching a lot of videos about real estate investing and I think I'm ready to get started. Not sure if I should flip or rent. How does the loan process work? Do I need a lot of money down? I'm looking at properties in the Phoenix area but haven't found anything specific yet.",
+  "source": "Facebook Ads",
+  "utm_campaign": "first-time-investor-az"
+}

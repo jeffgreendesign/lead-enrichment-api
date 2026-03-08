@@ -1,0 +1,18 @@
+{
+  "lead_id": "lead_006",
+  "submitted_at": "2026-03-07T08:30:00Z",
+  "first_name": "Kevin",
+  "last_name": "Patel",
+  "email": "kevin.patel@outlook.com",
+  "phone": "512-555-0438",
+  "property_address": "3310 E Riverside Dr",
+  "property_city": "Austin",
+  "property_state": "TX",
+  "property_type": "Single Family",
+  "loan_amount_requested": 340000,
+  "purchase_price": 275000,
+  "estimated_arv": 410000,
+  "notes": "Found a great deal — planning to rehab and flip within 6 months, but also considering keeping it as a long-term rental if the cash flow makes sense. ARV looks strong for a flip but the neighborhood rental comps are solid too. Would love to understand both exit strategies. Might also BRRRR it. First time doing this on my own but I've partnered on two deals before.",
+  "source": "Google Ads",
+  "utm_campaign": "bridge-loan-tx-q1"
+}

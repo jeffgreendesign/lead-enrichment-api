@@ -1,0 +1,18 @@
+{
+  "lead_id": "lead_007",
+  "submitted_at": "2026-03-06T09:50:00Z",
+  "first_name": "Aisha",
+  "last_name": "Montgomery",
+  "email": "aisha@montgomery-properties.com",
+  "phone": "602-555-0215",
+  "property_address": "4412 N 19th Ave",
+  "property_city": "Phoenix",
+  "property_state": "AZ",
+  "property_type": "Single Family",
+  "loan_amount_requested": 225000,
+  "purchase_price": 310000,
+  "estimated_arv": null,
+  "notes": "Adding another SFR to my rental portfolio. Tenant already in place paying $1,850/mo on a 12-month lease. DSCR should be well above 1.25. This will be my 8th rental property — all in the Phoenix metro. Looking for a 30-year fixed DSCR loan, no prepayment penalty preferred.",
+  "source": "Email Campaign",
+  "utm_campaign": "dscr-rental-az"
+}
