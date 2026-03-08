@@ -121,6 +121,22 @@ from lead_enrichment.models import LeadWebhookPayload
 from .models import LeadWebhookPayload
 ```
 
+## README Sync
+
+**Rule:** Any change that affects information documented in `README.md` must include a README update in the same commit.
+
+Sections that must stay in sync:
+
+| README Section | Triggers |
+|----------------|----------|
+| Stack line (line 5) | Adding/removing a production dependency or infrastructure service in `pyproject.toml` |
+| Project structure tree | Adding/removing/renaming files or directories |
+| Fixtures table | Adding/removing/renaming fixture files in `fixtures/` |
+| Environment variables section | Adding/removing/renaming env vars or changing defaults |
+| Architecture diagram | Changing the model default, data flow, or adding a pipeline stage |
+| Sample enriched response | Changing fields in `EnrichedLeadResponse` or `LLMClassification` |
+| curl examples | Changing endpoint paths or fixture filenames |
+
 ## Common Mistakes
 
 ### Build Breakers
@@ -133,6 +149,7 @@ from .models import LeadWebhookPayload
 - Changing `SYSTEM_PROMPT` without updating `LLMClassification` model — LLM returns fields that don't match the schema
 - Adding optional fields to `LeadWebhookPayload` without updating `build_user_prompt()` — new data never reaches the LLM
 - Changing GCS blob paths in `enrichment.py` without updating assertions in `tests/test_enrichment.py` — tests mock specific paths like `leads/failed/{id}.json` and `leads/{id}.json`
+- Any trigger in the README Sync table above without updating `README.md` — documentation silently drifts from reality
 
 ## How to Add New Things
 
@@ -141,7 +158,8 @@ from .models import LeadWebhookPayload
 1. Add route in `src/lead_enrichment/main.py`
 2. Add request/response models in `src/lead_enrichment/models.py`
 3. Add tests in `tests/`
-4. Run `/gates`
+4. Update `README.md`: add curl example, update project structure if new files were created
+5. Run `/gates`
 
 ### New LLM Output Field
 
@@ -149,7 +167,28 @@ from .models import LeadWebhookPayload
 2. Update `SYSTEM_PROMPT` in `prompts.py` to instruct the LLM
 3. Add field to `EnrichedLeadResponse` in `models.py`
 4. Add test for validation in `tests/test_models.py`
+5. Update `README.md`: update sample enriched response and AI governance section if applicable
+6. Run `/gates`
+
+### New Fixture
+
+1. Add JSON file in `fixtures/`
+2. Update `README.md`: add row to fixtures table, add curl example if it covers a new scenario
+3. Run `/gates`
+
+### New Environment Variable
+
+1. Add to code with `os.getenv()` and a sensible default
+2. Add to `.env.example`
+3. Update `README.md`: add row to environment variables section
+4. Update `CLAUDE.md`: add row to Environment Variables table
 5. Run `/gates`
+
+### New Dependency or Infrastructure Service
+
+1. Add to `pyproject.toml`
+2. Update `README.md`: add to stack line, update prerequisites if needed
+3. Run `/gates`
 
 ## Architecture Decisions
 

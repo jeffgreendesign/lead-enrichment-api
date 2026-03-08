@@ -2,7 +2,7 @@
 
 A serverless lead enrichment pipeline for lending and financial services, demonstrating how LLM inference integrates into marketing automation workflows. Built as a pattern exploration — webhook payload in, structured enrichment event out, with Pydantic schema validation acting as an AI governance layer throughout.
 
-**Stack:** Python · FastAPI · Anthropic Claude · Pydantic v2 · Docker · Google Cloud Run
+**Stack:** Python · FastAPI · Anthropic Claude · Pydantic v2 · Docker · Google Cloud Run · GCS · Snowflake
 
 ---
 
