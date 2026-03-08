@@ -4,6 +4,6 @@ Run all quality gates for the project:
 2. Run `ruff format --check .` — format check
 3. Run `mypy src/` — type checking
 4. Run `bash scripts/security-check.sh --strict` — security scan
-5. Run `pytest --tb=short` — test suite
+5. Run `python -m pytest --tb=short` — test suite
 
 Report each gate's pass/fail status. If any gate fails, identify the specific errors and fix them. Do NOT proceed with committing until all gates pass.
