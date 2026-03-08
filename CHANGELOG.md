@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- GCS write for enriched leads (`GCS_ENRICHMENT_BUCKET`) for Snowpipe ingest
+- Snowflake setup SQL: storage integration, stage, table, Snowpipe (`snowflake/setup.sql`)
+
 ## [1.0.0] - 2026-03-07
 
 ### Added

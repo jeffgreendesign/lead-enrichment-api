@@ -57,11 +57,13 @@ ruff format .
 ```text
 src/lead_enrichment/
 ├── main.py          # FastAPI app, routes, lifespan, error handlers
-├── enrichment.py    # LLM call, response parsing, validation
+├── enrichment.py    # LLM call, response parsing, validation, GCS write
 ├── models.py        # Pydantic models (input, LLM output, response)
 └── prompts.py       # System prompt + user prompt builder
 fixtures/
 └── *.json           # Sample lead payloads for testing
+snowflake/
+└── setup.sql        # Storage integration, stage, table, Snowpipe
 tests/
 └── *.py             # pytest test files
 ```
@@ -177,3 +179,4 @@ These choices are intentional. Do not suggest alternatives unless explicitly ask
 | `LOG_LEVEL`        | No       | `INFO`               | Python logging level       |
 | `PORT`             | No       | `8080`               | Server port (Cloud Run)    |
 | `GCS_FAILED_LEADS_BUCKET` | No | —               | GCS bucket for dead-letter failed leads |
+| `GCS_ENRICHMENT_BUCKET` | No | —                  | GCS bucket for enriched lead output (Snowpipe source) |
