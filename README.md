@@ -71,6 +71,7 @@ lead-enrichment-api/
 │       └── prompts.py       # System prompt + user prompt builder
 ├── tests/
 │   ├── conftest.py          # Shared fixtures and test client setup
+│   ├── test_enrichment.py   # GCS write and dead-letter tests
 │   ├── test_health.py       # Health endpoint tests
 │   └── test_models.py       # Pydantic model validation tests
 ├── fixtures/                # Sample lead payloads for testing
@@ -79,8 +80,10 @@ lead-enrichment-api/
 ├── postman/
 │   └── lead-enrichment-api.postman_collection.json
 ├── scripts/
-│   ├── security-check.sh   # Pre-commit secret and safety scanner
-│   └── sync-postman.py     # Regenerate Postman collection from OpenAPI + fixtures
+│   ├── security-check.sh    # Pre-commit secret and safety scanner
+│   ├── sync-postman.py      # Regenerate Postman collection from OpenAPI + fixtures
+│   ├── verify-snowpipe.py   # Snowpipe pipeline verification (Python)
+│   └── verify-snowpipe.sh   # Snowpipe pipeline verification (shell)
 ├── .github/
 │   └── workflows/
 │       └── ci.yml           # Lint, type-check, security scan, test
