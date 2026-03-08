@@ -24,6 +24,9 @@ dev = [
     "mypy>=1.8.0",
     "pre-commit>=3.6.0",
 ]
+ops = [
+    "snowflake-connector-python>=3.6.0",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/lead_enrichment"]
@@ -51,4 +54,8 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["google.cloud.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["snowflake.connector.*"]
 ignore_missing_imports = true
