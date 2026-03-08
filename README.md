@@ -114,11 +114,11 @@ cp .env.example .env
 ### Start the server
 
 ```bash
-# Development (auto-reload)
-fastapi dev src/lead_enrichment/main.py
+# Development (auto-reload, loads .env automatically)
+uvicorn src.lead_enrichment.main:app --reload --port 8080 --env-file .env
 
 # Production-equivalent
-uvicorn src.lead_enrichment.main:app --host 0.0.0.0 --port 8000
+uvicorn src.lead_enrichment.main:app --host 0.0.0.0 --port 8080
 ```
 
 ### Run with Docker
@@ -139,7 +139,7 @@ docker run --rm \
 **Fix-and-flip bridge loan lead:**
 
 ```bash
-curl -X POST http://localhost:8000/enrich \
+curl -X POST http://localhost:8080/enrich \
   -H "Content-Type: application/json" \
   -d @fixtures/lead_bridge_fix_flip.json | jq
 ```
@@ -147,7 +147,7 @@ curl -X POST http://localhost:8000/enrich \
 **Rental portfolio lead:**
 
 ```bash
-curl -X POST http://localhost:8000/enrich \
+curl -X POST http://localhost:8080/enrich \
   -H "Content-Type: application/json" \
   -d @fixtures/lead_rental_portfolio.json | jq
 ```
@@ -155,7 +155,7 @@ curl -X POST http://localhost:8000/enrich \
 **Sparse data (tests graceful handling):**
 
 ```bash
-curl -X POST http://localhost:8000/enrich \
+curl -X POST http://localhost:8080/enrich \
   -H "Content-Type: application/json" \
   -d @fixtures/lead_sparse.json | jq
 ```
@@ -165,13 +165,13 @@ curl -X POST http://localhost:8000/enrich \
 ```bash
 for f in fixtures/*.json; do
   echo "\n── $f ──"
-  curl -s -X POST http://localhost:8000/enrich \
+  curl -s -X POST http://localhost:8080/enrich \
     -H "Content-Type: application/json" \
     -d @$f | jq '.loan_type, .investor_experience, .urgency_score, .outreach_message'
 done
 ```
 
-**Interactive API docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
+**Interactive API docs:** [http://localhost:8080/docs](http://localhost:8080/docs)
 
 ---
 

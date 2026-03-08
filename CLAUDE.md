@@ -30,8 +30,8 @@ Webhook-driven AI lead enrichment API for lending and financial services. Accept
 # Setup
 pip install -e ".[dev]"
 
-# Dev server
-uvicorn src.lead_enrichment.main:app --reload
+# Dev server (loads .env automatically)
+uvicorn src.lead_enrichment.main:app --reload --port 8080 --env-file .env
 
 # Quality gates (run before every commit)
 ruff check .
