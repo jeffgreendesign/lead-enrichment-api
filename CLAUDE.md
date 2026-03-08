@@ -37,6 +37,7 @@ uvicorn src.lead_enrichment.main:app --reload --port 8080 --env-file .env
 ruff check .
 ruff format --check .
 mypy src/
+bash scripts/security-check.sh --strict
 pytest --tb=short
 
 # Auto-fix
@@ -52,6 +53,8 @@ ruff format .
 
 **Dependency injection** — Anthropic client initialized in FastAPI lifespan, injected via `Depends()`. Single client instance across all requests.
 
+**GCS persistence layer** — Enriched leads written to GCS for Snowpipe ingest (`GCS_ENRICHMENT_BUCKET`). Failed enrichments go to a dead-letter bucket (`GCS_FAILED_LEADS_BUCKET`). Both writes are non-fatal: GCS failures log warnings but don't break the API response.
+
 ### Directory Map
 
 ```text
@@ -62,6 +65,13 @@ src/lead_enrichment/
 └── prompts.py       # System prompt + user prompt builder
 fixtures/
 └── *.json           # Sample lead payloads for testing
+scripts/
+├── security-check.sh    # Pre-commit secret and safety scanner
+├── sync-postman.py      # Regenerate Postman collection from OpenAPI
+├── verify-snowpipe.py   # Snowpipe pipeline verification (Python)
+└── verify-snowpipe.sh   # Snowpipe pipeline verification (shell)
+postman/
+└── *.json           # Postman collection (auto-generated)
 snowflake/
 └── setup.sql        # Storage integration, stage, table, Snowpipe
 tests/
@@ -76,6 +86,7 @@ tests/
 | Change LLM behavior     | `src/lead_enrichment/prompts.py`    | System prompt and user prompt templates |
 | Change data schema      | `src/lead_enrichment/models.py`     | All Pydantic models and validators     |
 | Change LLM call logic   | `src/lead_enrichment/enrichment.py` | API call, parsing, model selection     |
+| Change GCS/storage      | `src/lead_enrichment/enrichment.py` | GCS write, dead-letter, blob paths     |
 
 ## Code Conventions
 
@@ -121,6 +132,7 @@ from .models import LeadWebhookPayload
 
 - Changing `SYSTEM_PROMPT` without updating `LLMClassification` model — LLM returns fields that don't match the schema
 - Adding optional fields to `LeadWebhookPayload` without updating `build_user_prompt()` — new data never reaches the LLM
+- Changing GCS blob paths in `enrichment.py` without updating assertions in `tests/test_enrichment.py` — tests mock specific paths like `leads/failed/{id}.json` and `leads/{id}.json`
 
 ## How to Add New Things
 
