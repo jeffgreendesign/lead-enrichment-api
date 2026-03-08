@@ -15,14 +15,23 @@
       "Bash(git log*)",
       "Bash(git add *)",
       "Bash(git commit *)",
-      "Bash(git push -u origin claude/*)"
+      "Bash(git push -u origin claude/sync-docs-guardrails-fBA85)"
     ],
     "deny": [
       "Bash(rm -rf *)",
+      "Bash(rm -r *)",
       "Bash(git push --force*)",
+      "Bash(git push*--force*)",
+      "Bash(git push*--force-with-lease*)",
+      "Bash(git push*--delete*)",
+      "Bash(git push*--mirror*)",
       "Bash(git reset --hard*)",
+      "Bash(git clean -f*)",
       "Bash(gcloud run services delete*)",
-      "Bash(curl *)"
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Bash(eval *)",
+      "Bash(npx *)"
     ]
   }
 }
