@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import StrEnum
 
 from pydantic import BaseModel, Field, field_validator
@@ -93,7 +93,9 @@ class LLMClassification(BaseModel):
 
 
 class EnrichmentMetadata(BaseModel):
-    enriched_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
+    enriched_at: str = Field(
+        default_factory=lambda: datetime.now(UTC).isoformat().replace("+00:00", "Z")
+    )
     model: str
     schema_version: str = "1.0"
 
