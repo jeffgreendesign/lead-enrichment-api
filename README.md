@@ -74,6 +74,8 @@ lead-enrichment-api/
 │   ├── test_health.py       # Health endpoint tests
 │   └── test_models.py       # Pydantic model validation tests
 ├── fixtures/                # Sample lead payloads for testing
+├── snowflake/
+│   └── setup.sql            # Snowflake storage integration, stage, table, Snowpipe
 ├── postman/
 │   └── lead-enrichment-api.postman_collection.json
 ├── scripts/
@@ -219,6 +221,81 @@ gcloud run deploy lead-enrichment-api \
   --image ... \
   --set-secrets ANTHROPIC_API_KEY=anthropic-api-key:latest
 ```
+
+---
+
+## Snowflake Setup (Snowpipe)
+
+Enriched leads are written to GCS on every successful `/enrich` call. Snowpipe auto-ingests these files into Snowflake for analytics.
+
+### Prerequisites
+
+- `GCS_ENRICHMENT_BUCKET` environment variable set on the Cloud Run service
+- Snowflake account with `ACCOUNTADMIN` role
+
+### Steps
+
+1. **Run the setup SQL** — paste and run everything from [`snowflake/setup.sql`](snowflake/setup.sql) in a Snowflake worksheet, through the pipe creation. Stop before `MANUAL STEP 1`.
+
+2. **Get the Snowflake service account**
+
+   ```sql
+   DESC INTEGRATION gcs_lead_enrichment;
+   ```
+
+   Copy the `STORAGE_GCP_SERVICE_ACCOUNT` value (looks like `xxxx@gcpuscentral1-xxxx.iam.gserviceaccount.com`).
+
+3. **Grant it access in GCP** (run in your terminal)
+
+   ```bash
+   gcloud storage buckets add-iam-policy-binding gs://lead-enrichment-output \
+     --member="serviceAccount:<STORAGE_GCP_SERVICE_ACCOUNT_FROM_STEP_2>" \
+     --role="roles/storage.objectViewer"
+   ```
+
+4. **Test the stage can read your files**
+
+   ```sql
+   LIST @martech.gcs_leads_stage;
+   ```
+
+   You should see your enriched lead JSON files listed.
+
+5. **Get the Pub/Sub notification channel**
+
+   ```sql
+   SHOW PIPES LIKE 'lead_enrichment_pipe' IN SCHEMA martech;
+   ```
+
+   Copy the `notification_channel` value from the output.
+
+6. **Create the GCS notification** (run in your terminal)
+
+   ```bash
+   gsutil notification create \
+     -t <notification_channel_from_step_5> \
+     -f json \
+     -e OBJECT_FINALIZE \
+     gs://lead-enrichment-output
+   ```
+
+7. **Manually load existing files** — Snowpipe only auto-ingests new files, so refresh to pick up any that already exist:
+
+   ```sql
+   ALTER PIPE martech.lead_enrichment_pipe REFRESH;
+   ```
+
+8. **Verify**
+
+   ```sql
+   -- Check pipe status
+   SELECT SYSTEM$PIPE_STATUS('martech.lead_enrichment_pipe');
+
+   -- Check data (wait ~60s after refresh)
+   SELECT lead_id, loan_type, urgency_score, ingested_at
+   FROM martech.raw_webhook_events
+   ORDER BY ingested_at DESC;
+   ```
 
 ---
 
