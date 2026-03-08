@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import os
 from collections.abc import AsyncIterator
@@ -67,7 +68,7 @@ async def pydantic_validation_handler(request: Request, exc: ValidationError) ->
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={
             "error": "ai_output_validation_failed",
-            "detail": exc.errors(),
+            "detail": json.loads(exc.json()),
             "message": (
                 "The LLM response did not conform to the required output schema. "
                 "The enrichment request was rejected by the AI governance layer."
@@ -101,6 +102,8 @@ async def enrich_lead_endpoint(
 ) -> EnrichedLeadResponse:
     try:
         result = enrich_lead(payload, client)
+    except ValidationError:
+        raise  # Propagate to exception handler → 422 ai_output_validation_failed
     except ValueError as e:
         _write_to_gcs_failed(payload, "llm_parse_error", str(e))
         raise HTTPException(
