@@ -6,10 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-03-08
+
 ### Added
 
+- End-to-end integration tests for `/enrich` endpoint with mocked LLM responses
 - GCS write for enriched leads (`GCS_ENRICHMENT_BUCKET`) for Snowpipe ingest
 - Snowflake setup SQL: storage integration, stage, table, Snowpipe (`snowflake/setup.sql`)
+- Snowpipe verification scripts (`scripts/verify-snowpipe.py`, `scripts/verify-snowpipe.sh`)
+- MIT LICENSE file
 
 ## [1.0.0] - 2026-03-07
 

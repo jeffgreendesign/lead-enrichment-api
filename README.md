@@ -52,7 +52,12 @@ Webhook Payload
 ┌─────────────────────┐
 │  Structured Event   │  EnrichedLeadResponse
 │  (CDP / Automation) │  Ready for Segment Track / SendGrid
-└─────────────────────┘
+└─────────┬───────────┘
+          │
+          ├──▶ API Response (JSON)
+          │
+          └──▶ GCS ──▶ Snowpipe ──▶ Snowflake
+               (enrichment archive)  (analytics / reporting)
 ```
 
 The governance approach — using Pydantic as a contract between the LLM and the rest of the system — is the core pattern this project explores. Structured output validation is one of the more underrated techniques for making LLM-integrated services production-ready: it forces the model to earn its place in the pipeline on every request.
@@ -70,17 +75,21 @@ lead-enrichment-api/
 │       ├── enrichment.py    # LLM call + parse + validation logic
 │       └── prompts.py       # System prompt + user prompt builder
 ├── tests/
-│   ├── conftest.py          # Shared fixtures and test client setup
-│   ├── test_health.py       # Health endpoint tests
-│   └── test_models.py       # Pydantic model validation tests
+│   ├── conftest.py              # Shared fixtures and test client setup
+│   ├── test_health.py           # Health endpoint tests
+│   ├── test_models.py           # Pydantic model validation tests
+│   ├── test_enrichment.py       # GCS write and dead-letter tests
+│   └── test_enrich_endpoint.py  # End-to-end /enrich integration tests
 ├── fixtures/                # Sample lead payloads for testing
 ├── snowflake/
 │   └── setup.sql            # Snowflake storage integration, stage, table, Snowpipe
 ├── postman/
 │   └── lead-enrichment-api.postman_collection.json
 ├── scripts/
-│   ├── security-check.sh   # Pre-commit secret and safety scanner
-│   └── sync-postman.py     # Regenerate Postman collection from OpenAPI + fixtures
+│   ├── security-check.sh    # Pre-commit secret and safety scanner
+│   ├── sync-postman.py      # Regenerate Postman collection from OpenAPI + fixtures
+│   ├── verify-snowpipe.py   # Snowpipe connectivity and ingestion verification
+│   └── verify-snowpipe.sh   # Shell wrapper for Snowpipe verification
 ├── .github/
 │   └── workflows/
 │       └── ci.yml           # Lint, type-check, security scan, test
