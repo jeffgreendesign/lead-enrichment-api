@@ -82,13 +82,19 @@ class TestWriteToGcsFailed:
 
 
 @pytest.fixture
-def enriched_response(payload: LeadWebhookPayload) -> EnrichedLeadResponse:
+def enriched_response() -> EnrichedLeadResponse:
+    enriched_payload = LeadWebhookPayload(
+        lead_id="enriched-001",
+        first_name="Jane",
+        last_name="Doe",
+        email="jane@example.com",
+    )
     return EnrichedLeadResponse(
-        lead_id=payload.lead_id,
-        email=payload.email,
-        first_name=payload.first_name,
-        last_name=payload.last_name,
-        raw=payload,
+        lead_id=enriched_payload.lead_id,
+        email=enriched_payload.email,
+        first_name=enriched_payload.first_name,
+        last_name=enriched_payload.last_name,
+        raw=enriched_payload,
         loan_type=LoanType.BRIDGE_RTL,
         investor_experience=InvestorExperience.EXPERIENCED,
         urgency_score=3,
@@ -116,11 +122,11 @@ class TestWriteToGcs:
         _write_to_gcs(enriched_response)
 
         mock_client.bucket.assert_called_once_with("enrichment-bucket")
-        mock_bucket.blob.assert_called_once_with("leads/dead-letter-001.json")
+        mock_bucket.blob.assert_called_once_with("leads/enriched-001.json")
         mock_blob.upload_from_string.assert_called_once()
 
         uploaded = json.loads(mock_blob.upload_from_string.call_args[0][0])
-        assert uploaded["lead_id"] == "dead-letter-001"
+        assert uploaded["lead_id"] == "enriched-001"
         assert uploaded["loan_type"] == "bridge_rtl"
         assert uploaded["urgency_score"] == 3
 
