@@ -74,8 +74,11 @@ lead-enrichment-api/
 │   ├── test_health.py       # Health endpoint tests
 │   └── test_models.py       # Pydantic model validation tests
 ├── fixtures/                # Sample lead payloads for testing
+├── postman/
+│   └── lead-enrichment-api.postman_collection.json
 ├── scripts/
-│   └── security-check.sh   # Pre-commit secret and safety scanner
+│   ├── security-check.sh   # Pre-commit secret and safety scanner
+│   └── sync-postman.py     # Regenerate Postman collection from OpenAPI + fixtures
 ├── .github/
 │   └── workflows/
 │       └── ci.yml           # Lint, type-check, security scan, test
@@ -172,6 +175,20 @@ done
 ```
 
 **Interactive API docs:** [http://localhost:8080/docs](http://localhost:8080/docs)
+
+---
+
+## Postman
+
+A Postman collection is included at `postman/lead-enrichment-api.postman_collection.json` with all endpoints and fixture payloads pre-loaded. Import it into Postman and the `{{base_url}}` variable defaults to `http://localhost:8080`.
+
+To regenerate the collection after changing endpoints, models, or fixtures:
+
+```bash
+python scripts/sync-postman.py
+```
+
+This pulls the OpenAPI schema from the FastAPI app and combines it with every fixture in `fixtures/` to produce an up-to-date collection.
 
 ---
 
