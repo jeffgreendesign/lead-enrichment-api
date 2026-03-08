@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
 MAX_TOKENS = 512
 GCS_FAILED_LEADS_BUCKET = os.getenv("GCS_FAILED_LEADS_BUCKET")
+GCS_ENRICHMENT_BUCKET = os.getenv("GCS_ENRICHMENT_BUCKET")
 
 
 def _write_to_gcs_failed(
@@ -65,6 +66,38 @@ def _write_to_gcs_failed(
         )
 
 
+def _write_to_gcs(response: EnrichedLeadResponse) -> None:
+    """Write enriched lead to GCS for Snowpipe ingest. Non-fatal: logs a warning on failure."""
+    if not GCS_ENRICHMENT_BUCKET:
+        logger.warning(
+            "GCS_ENRICHMENT_BUCKET not set, skipping write for %s",
+            response.lead_id,
+        )
+        return
+
+    try:
+        blob_path = f"leads/{response.lead_id}.json"
+        client = storage.Client()
+        bucket = client.bucket(GCS_ENRICHMENT_BUCKET)
+        blob = bucket.blob(blob_path)
+        blob.upload_from_string(
+            response.model_dump_json(),
+            content_type="application/json",
+        )
+        logger.info(
+            "Wrote lead %s to gs://%s/%s",
+            response.lead_id,
+            GCS_ENRICHMENT_BUCKET,
+            blob_path,
+        )
+    except Exception:
+        logger.warning(
+            "Failed to write lead %s to GCS",
+            response.lead_id,
+            exc_info=True,
+        )
+
+
 def _parse_llm_response(raw_text: str) -> LLMClassification:
     """
     Parse and validate the LLM's JSON response against LLMClassification.
@@ -103,7 +136,7 @@ def enrich_lead(
 
     classification = _parse_llm_response(raw_text)
 
-    return EnrichedLeadResponse(
+    result = EnrichedLeadResponse(
         lead_id=payload.lead_id,
         email=payload.email,
         first_name=payload.first_name,
@@ -116,3 +149,5 @@ def enrich_lead(
         classification_rationale=classification.classification_rationale,
         metadata=EnrichmentMetadata(model=MODEL),
     )
+    _write_to_gcs(result)
+    return result

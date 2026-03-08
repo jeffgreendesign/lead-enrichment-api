@@ -15,7 +15,8 @@ RUN pip install --no-cache-dir --upgrade pip \
         "fastapi[standard]>=0.135.1" \
         "anthropic>=0.84.0" \
         "pydantic>=2.10.0" \
-        "uvicorn[standard]>=0.34.0"
+        "uvicorn[standard]>=0.34.0" \
+        "google-cloud-storage>=2.18.0"
 
 # Copy application source
 COPY src/ ./src/

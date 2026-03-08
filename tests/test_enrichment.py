@@ -6,8 +6,14 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.lead_enrichment.enrichment import _write_to_gcs_failed
-from src.lead_enrichment.models import LeadWebhookPayload
+from src.lead_enrichment.enrichment import _write_to_gcs, _write_to_gcs_failed
+from src.lead_enrichment.models import (
+    EnrichedLeadResponse,
+    EnrichmentMetadata,
+    InvestorExperience,
+    LeadWebhookPayload,
+    LoanType,
+)
 
 
 @pytest.fixture
@@ -73,3 +79,78 @@ class TestWriteToGcsFailed:
             _write_to_gcs_failed(payload, "llm_parse_error", "bad json")
 
         assert "GCS_FAILED_LEADS_BUCKET not set" in caplog.text
+
+
+@pytest.fixture
+def enriched_response(payload: LeadWebhookPayload) -> EnrichedLeadResponse:
+    return EnrichedLeadResponse(
+        lead_id=payload.lead_id,
+        email=payload.email,
+        first_name=payload.first_name,
+        last_name=payload.last_name,
+        raw=payload,
+        loan_type=LoanType.BRIDGE_RTL,
+        investor_experience=InvestorExperience.EXPERIENCED,
+        urgency_score=3,
+        outreach_message="Hello Jane, let us help with your bridge loan.",
+        classification_rationale="Experienced investor seeking bridge financing.",
+        metadata=EnrichmentMetadata(model="claude-sonnet-4-6"),
+    )
+
+
+class TestWriteToGcs:
+    @patch("src.lead_enrichment.enrichment.storage.Client")
+    def test_writes_correct_blob_path_and_content(
+        self,
+        mock_client_cls: MagicMock,
+        enriched_response: EnrichedLeadResponse,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setattr(
+            "src.lead_enrichment.enrichment.GCS_ENRICHMENT_BUCKET", "enrichment-bucket"
+        )
+        mock_client = mock_client_cls.return_value
+        mock_bucket = mock_client.bucket.return_value
+        mock_blob = mock_bucket.blob.return_value
+
+        _write_to_gcs(enriched_response)
+
+        mock_client.bucket.assert_called_once_with("enrichment-bucket")
+        mock_bucket.blob.assert_called_once_with("leads/dead-letter-001.json")
+        mock_blob.upload_from_string.assert_called_once()
+
+        uploaded = json.loads(mock_blob.upload_from_string.call_args[0][0])
+        assert uploaded["lead_id"] == "dead-letter-001"
+        assert uploaded["loan_type"] == "bridge_rtl"
+        assert uploaded["urgency_score"] == 3
+
+    @patch("src.lead_enrichment.enrichment.storage.Client")
+    def test_gcs_failure_logs_warning_and_does_not_raise(
+        self,
+        mock_client_cls: MagicMock,
+        enriched_response: EnrichedLeadResponse,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        monkeypatch.setattr(
+            "src.lead_enrichment.enrichment.GCS_ENRICHMENT_BUCKET", "enrichment-bucket"
+        )
+        mock_client_cls.side_effect = Exception("GCS unavailable")
+
+        with caplog.at_level(logging.WARNING):
+            _write_to_gcs(enriched_response)
+
+        assert "Failed to write lead" in caplog.text
+
+    def test_missing_bucket_env_skips_gcs(
+        self,
+        enriched_response: EnrichedLeadResponse,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        monkeypatch.setattr("src.lead_enrichment.enrichment.GCS_ENRICHMENT_BUCKET", "")
+
+        with caplog.at_level(logging.WARNING):
+            _write_to_gcs(enriched_response)
+
+        assert "GCS_ENRICHMENT_BUCKET not set" in caplog.text
