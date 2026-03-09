@@ -8,7 +8,10 @@ import { generateSampleResult } from "@/lib/sampleData";
 import ClassificationResult from "./ClassificationResult";
 import ProcessLog from "./ProcessLog";
 
-const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const delay = (ms: number) =>
+  process.env.NODE_ENV === "production"
+    ? Promise.resolve()
+    : new Promise((r) => setTimeout(r, ms));
 
 export default function LeadTester() {
   const { addResult, addLogEntry, updateLogEntryStatus, clearLog, logEntries } =
@@ -37,13 +40,15 @@ export default function LeadTester() {
   }
 
   function handleLoadSample() {
+    setError(null);
+    setResult(null);
+    clearLog();
+
     try {
       const payload = JSON.parse(json);
       const sample = generateSampleResult(payload);
       addResult(sample);
       setResult(sample);
-
-      clearLog();
       addLogEntry({
         timestamp: new Date(),
         message: `Sample generated for ${payload.first_name ?? "lead"} ${payload.last_name ?? ""} (${payload.lead_id ?? "unknown"})`,
@@ -72,8 +77,8 @@ export default function LeadTester() {
     setResult(null);
     setError(null);
 
-    let sendingIdx = -1;
-    let waitingIdx = -1;
+    let sendingId = -1;
+    let waitingId = -1;
 
     try {
       const payload = JSON.parse(json);
@@ -102,14 +107,14 @@ export default function LeadTester() {
       });
 
       await delay(300);
-      sendingIdx = addLogEntry({
+      sendingId = addLogEntry({
         timestamp: new Date(),
         message: "Sending to enrichment API...",
         status: "pending",
       });
 
       await delay(200);
-      waitingIdx = addLogEntry({
+      waitingId = addLogEntry({
         timestamp: new Date(),
         message: "Waiting for LLM classification (model: claude-sonnet-4-6)...",
         status: "pending",
@@ -117,8 +122,8 @@ export default function LeadTester() {
 
       const data = await enrichLead(payload);
 
-      updateLogEntryStatus(sendingIdx, "success");
-      updateLogEntryStatus(waitingIdx, "success");
+      updateLogEntryStatus(sendingId, "success");
+      updateLogEntryStatus(waitingId, "success");
 
       addLogEntry({
         timestamp: new Date(),
@@ -143,8 +148,8 @@ export default function LeadTester() {
       setResult(data);
       addResult(data);
     } catch (err) {
-      if (sendingIdx >= 0) updateLogEntryStatus(sendingIdx, "error");
-      if (waitingIdx >= 0) updateLogEntryStatus(waitingIdx, "error");
+      if (sendingId >= 0) updateLogEntryStatus(sendingId, "error");
+      if (waitingId >= 0) updateLogEntryStatus(waitingId, "error");
 
       const msg = err instanceof Error ? err.message : "Unknown error";
       addLogEntry({

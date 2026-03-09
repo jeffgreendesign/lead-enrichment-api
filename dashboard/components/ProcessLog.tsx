@@ -49,6 +49,8 @@ export default function ProcessLog({
     <div className="rounded-lg border border-neutral-800 bg-neutral-900 overflow-hidden">
       <button
         onClick={onToggle}
+        aria-expanded={isExpanded}
+        aria-controls="process-log-panel"
         className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-xs font-medium text-neutral-400 transition-colors hover:text-neutral-200"
       >
         <svg
@@ -79,12 +81,13 @@ export default function ProcessLog({
 
       {isExpanded && (
         <div
+          id="process-log-panel"
           ref={scrollRef}
           className="max-h-64 overflow-y-auto border-t border-neutral-800 px-4 py-2"
         >
           <div className="space-y-1.5">
-            {entries.map((entry, i) => (
-              <div key={i} className="flex items-start gap-2.5 text-xs">
+            {entries.map((entry) => (
+              <div key={entry.id} className="flex items-start gap-2.5 text-xs">
                 <span className="mt-0.5 shrink-0 tabular-nums text-neutral-600 font-mono">
                   {formatTime(entry.timestamp)}
                 </span>

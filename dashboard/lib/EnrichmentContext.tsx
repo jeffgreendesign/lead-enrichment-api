@@ -13,10 +13,13 @@ import type { EnrichedLeadResponse, PipelineStatsData } from "./api";
 // ── Log entry type ───────────────────────────────────────────────────────────
 
 export interface LogEntry {
+  id: number;
   timestamp: Date;
   message: string;
   status: "pending" | "success" | "error";
 }
+
+let nextLogId = 0;
 
 // ── Context value ────────────────────────────────────────────────────────────
 
@@ -27,8 +30,8 @@ interface EnrichmentContextValue {
   stats: PipelineStatsData;
 
   logEntries: LogEntry[];
-  addLogEntry: (entry: LogEntry) => number;
-  updateLogEntryStatus: (index: number, status: LogEntry["status"]) => void;
+  addLogEntry: (entry: Omit<LogEntry, "id">) => number;
+  updateLogEntryStatus: (id: number, status: LogEntry["status"]) => void;
   clearLog: () => void;
 }
 
@@ -51,19 +54,16 @@ export function EnrichmentProvider({ children }: { children: ReactNode }) {
 
   const clearResults = useCallback(() => setResults([]), []);
 
-  const addLogEntry = useCallback((entry: LogEntry): number => {
-    let idx = -1;
-    setLogEntries((prev) => {
-      idx = prev.length;
-      return [...prev, entry];
-    });
-    return idx;
+  const addLogEntry = useCallback((entry: Omit<LogEntry, "id">): number => {
+    const id = nextLogId++;
+    setLogEntries((prev) => [...prev, { ...entry, id }]);
+    return id;
   }, []);
 
   const updateLogEntryStatus = useCallback(
-    (index: number, status: LogEntry["status"]) => {
+    (id: number, status: LogEntry["status"]) => {
       setLogEntries((prev) =>
-        prev.map((e, i) => (i === index ? { ...e, status } : e)),
+        prev.map((e) => (e.id === id ? { ...e, status } : e)),
       );
     },
     [],

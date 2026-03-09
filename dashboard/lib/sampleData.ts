@@ -108,9 +108,14 @@ function shortId(): string {
   return Math.random().toString(36).slice(2, 6);
 }
 
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function countSignals(text: string, signals: string[]): number {
-  const lower = text.toLowerCase();
-  return signals.filter((s) => lower.includes(s)).length;
+  return signals.filter((s) =>
+    new RegExp(`\\b${escapeRegex(s)}\\b`, "i").test(text),
+  ).length;
 }
 
 function weightedPick<T>(items: [T, number][]): T {
