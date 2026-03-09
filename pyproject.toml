@@ -59,15 +59,3 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = ["snowflake.connector.*"]
 ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = ["pydantic", "pydantic.*"]
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = ["fastapi", "fastapi.*"]
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = ["starlette", "starlette.*"]
-ignore_missing_imports = true

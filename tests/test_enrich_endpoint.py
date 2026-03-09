@@ -6,19 +6,7 @@ import anthropic
 from fastapi.testclient import TestClient
 
 from src.lead_enrichment.models import LLMClassification
-
-
-def _mock_parse_response(classification: LLMClassification | None) -> MagicMock:
-    """Build a mock ParsedMessage with parsed_output and usage."""
-    message = MagicMock()
-    message.parsed_output = classification
-    message.usage = MagicMock(input_tokens=100, output_tokens=50)
-    if classification is None:
-        block = MagicMock()
-        block.text = "I'd be happy to help classify this lead..."
-        message.content = [block]
-    return message
-
+from tests.helpers import mock_parse_response
 
 VALID_CLASSIFICATION = LLMClassification(
     loan_type="bridge_rtl",
@@ -44,7 +32,7 @@ class TestEnrichEndpointHappyPath:
         full_payload: dict[str, object],
     ) -> None:
         client.app.state.anthropic_client.messages.parse.return_value = (  # type: ignore[union-attr]
-            _mock_parse_response(VALID_CLASSIFICATION)
+            mock_parse_response(VALID_CLASSIFICATION)
         )
 
         resp = client.post("/enrich", json=full_payload)
@@ -69,7 +57,7 @@ class TestEnrichEndpointHappyPath:
         sample_payload: dict[str, object],
     ) -> None:
         client.app.state.anthropic_client.messages.parse.return_value = (  # type: ignore[union-attr]
-            _mock_parse_response(VALID_CLASSIFICATION)
+            mock_parse_response(VALID_CLASSIFICATION)
         )
 
         resp = client.post("/enrich", json=sample_payload)
@@ -98,7 +86,7 @@ class TestEnrichEndpointGovernance:
             classification_rationale="Strong signals.",
         )
         client.app.state.anthropic_client.messages.parse.return_value = (  # type: ignore[union-attr]
-            _mock_parse_response(bad_classification)
+            mock_parse_response(bad_classification)
         )
 
         resp = client.post("/enrich", json=full_payload)
@@ -125,7 +113,7 @@ class TestEnrichEndpointGovernance:
             classification_rationale="Strong signals.",
         )
         client.app.state.anthropic_client.messages.parse.return_value = (  # type: ignore[union-attr]
-            _mock_parse_response(bad_classification)
+            mock_parse_response(bad_classification)
         )
 
         resp = client.post("/enrich", json=full_payload)
@@ -145,7 +133,7 @@ class TestEnrichEndpointErrorPaths:
         full_payload: dict[str, object],
     ) -> None:
         client.app.state.anthropic_client.messages.parse.return_value = (  # type: ignore[union-attr]
-            _mock_parse_response(None)
+            mock_parse_response(None)
         )
 
         resp = client.post("/enrich", json=full_payload)

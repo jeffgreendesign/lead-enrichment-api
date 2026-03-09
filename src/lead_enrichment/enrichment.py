@@ -20,7 +20,21 @@ from .prompts import SYSTEM_PROMPT, build_user_prompt
 logger = logging.getLogger(__name__)
 
 MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
-MAX_TOKENS = int(os.getenv("ANTHROPIC_MAX_TOKENS", "512"))
+
+_DEFAULT_MAX_TOKENS = 512
+_raw_max_tokens = os.getenv("ANTHROPIC_MAX_TOKENS")
+try:
+    MAX_TOKENS = int(_raw_max_tokens) if _raw_max_tokens else _DEFAULT_MAX_TOKENS
+    if MAX_TOKENS <= 0:
+        raise ValueError("must be positive")
+except (ValueError, TypeError):
+    logger.warning(
+        "Invalid ANTHROPIC_MAX_TOKENS=%r, falling back to %d",
+        _raw_max_tokens,
+        _DEFAULT_MAX_TOKENS,
+    )
+    MAX_TOKENS = _DEFAULT_MAX_TOKENS
+
 GCS_FAILED_LEADS_BUCKET = os.getenv("GCS_FAILED_LEADS_BUCKET")
 GCS_ENRICHMENT_BUCKET = os.getenv("GCS_ENRICHMENT_BUCKET")
 

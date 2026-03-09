@@ -6,9 +6,11 @@ import { enrichLead, type EnrichedLeadResponse } from "@/lib/api";
 import ClassificationResult from "./ClassificationResult";
 
 export default function LeadTester() {
-  const [selectedFixture, setSelectedFixture] = useState(FIXTURE_NAMES[0]);
+  const [selectedFixture, setSelectedFixture] = useState(
+    FIXTURE_NAMES.length ? FIXTURE_NAMES[0] : "",
+  );
   const [json, setJson] = useState(
-    JSON.stringify(FIXTURES[FIXTURE_NAMES[0]], null, 2),
+    JSON.stringify(FIXTURES[FIXTURE_NAMES[0]] ?? {}, null, 2),
   );
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<EnrichedLeadResponse | null>(null);

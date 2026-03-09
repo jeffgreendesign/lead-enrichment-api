@@ -1,6 +1,11 @@
+import type { Metadata } from "next";
 import LeadTester from "@/components/LeadTester";
-import PipelineStats from "@/components/PipelineStats";
-import RecentLeads from "@/components/RecentLeads";
+import StatsSection from "@/components/StatsSection";
+
+export const metadata: Metadata = {
+  title: "Dashboard",
+  description: "Lead enrichment dashboard — test leads, view classification results and pipeline stats",
+};
 
 export default function Home() {
   return (
@@ -12,21 +17,7 @@ export default function Home() {
         <LeadTester />
       </section>
 
-      <div className="grid gap-8 md:grid-cols-2">
-        <section>
-          <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-neutral-500">
-            Classification Split
-          </h2>
-          <RecentLeads />
-        </section>
-
-        <section>
-          <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-neutral-500">
-            Pipeline Stats
-          </h2>
-          <PipelineStats />
-        </section>
-      </div>
+      <StatsSection />
     </div>
   );
 }

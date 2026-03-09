@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { fetchStats, type PipelineStatsData } from "@/lib/api";
+import type { PipelineStatsData } from "@/lib/api";
 import { PieChart, Pie, Cell, Legend, ResponsiveContainer } from "recharts";
 
 const COLORS: Record<string, string> = {
@@ -10,13 +9,11 @@ const COLORS: Record<string, string> = {
   unknown: "#6b7280",
 };
 
-export default function RecentLeads() {
-  const [stats, setStats] = useState<PipelineStatsData | null>(null);
-
-  useEffect(() => {
-    fetchStats().then(setStats).catch(console.error);
-  }, []);
-
+export default function RecentLeads({
+  stats,
+}: {
+  stats: PipelineStatsData | null;
+}) {
   if (!stats) {
     return (
       <div className="h-64 animate-pulse rounded-lg border border-neutral-800 bg-neutral-900" />

@@ -26,6 +26,7 @@ function Badge({ label, colorClass }: { label: string; colorClass: string }) {
 }
 
 function UrgencyPips({ score }: { score: number }) {
+  const clamped = Math.max(0, Math.min(5, Math.round(score)));
   return (
     <div className="flex items-center gap-1">
       <span className="mr-2 text-xs text-neutral-400">Urgency</span>
@@ -33,11 +34,11 @@ function UrgencyPips({ score }: { score: number }) {
         <div
           key={i}
           className={`h-3 w-3 rounded-full ${
-            i <= score ? "bg-amber-400" : "bg-neutral-700"
+            i <= clamped ? "bg-amber-400" : "bg-neutral-700"
           }`}
         />
       ))}
-      <span className="ml-2 text-xs text-neutral-500">{score}/5</span>
+      <span className="ml-2 text-xs text-neutral-500">{clamped}/5</span>
     </div>
   );
 }

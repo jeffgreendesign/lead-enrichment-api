@@ -16,6 +16,7 @@ from src.lead_enrichment.models import (
     LLMClassification,
     LoanType,
 )
+from tests.helpers import mock_parse_response
 
 
 @pytest.fixture
@@ -180,22 +181,6 @@ VALID_CLASSIFICATION = LLMClassification(
 )
 
 
-def _mock_parse_response(
-    classification: LLMClassification | None,
-    input_tokens: int = 200,
-    output_tokens: int = 80,
-) -> MagicMock:
-    """Build a mock ParsedMessage."""
-    message = MagicMock()
-    message.parsed_output = classification
-    message.usage = MagicMock(input_tokens=input_tokens, output_tokens=output_tokens)
-    if classification is None:
-        block = MagicMock()
-        block.text = "Sorry, I cannot classify this lead."
-        message.content = [block]
-    return message
-
-
 class TestEnrichLead:
     @patch("src.lead_enrichment.enrichment._write_to_gcs")
     def test_happy_path_returns_enriched_response(
@@ -204,7 +189,9 @@ class TestEnrichLead:
         payload: LeadWebhookPayload,
     ) -> None:
         mock_client = MagicMock()
-        mock_client.messages.parse.return_value = _mock_parse_response(VALID_CLASSIFICATION)
+        mock_client.messages.parse.return_value = mock_parse_response(
+            VALID_CLASSIFICATION, input_tokens=200, output_tokens=80
+        )
 
         result = enrich_lead(payload, mock_client)
 
@@ -225,7 +212,7 @@ class TestEnrichLead:
         payload: LeadWebhookPayload,
     ) -> None:
         mock_client = MagicMock()
-        mock_client.messages.parse.return_value = _mock_parse_response(None)
+        mock_client.messages.parse.return_value = mock_parse_response(None)
 
         with pytest.raises(ValueError, match="unparseable"):
             enrich_lead(payload, mock_client)
@@ -248,7 +235,7 @@ class TestEnrichLead:
             classification_rationale="Strong signals.",
         )
         mock_client = MagicMock()
-        mock_client.messages.parse.return_value = _mock_parse_response(bad_classification)
+        mock_client.messages.parse.return_value = mock_parse_response(bad_classification)
 
         with pytest.raises(ValidationError):
             enrich_lead(payload, mock_client)

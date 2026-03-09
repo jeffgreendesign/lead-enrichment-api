@@ -10,14 +10,49 @@ export async function POST(request: Request) {
     );
   }
 
-  const body = await request.json();
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json(
+      { message: "Invalid JSON in request body" },
+      { status: 400 },
+    );
+  }
 
-  const upstream = await fetch(`${LEAD_API_URL}/enrich`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  const requestId = request.headers.get("x-request-id");
+  if (requestId) {
+    headers["X-Request-ID"] = requestId;
+  }
 
-  const data = await upstream.json();
+  let upstream: Response;
+  try {
+    upstream = await fetch(`${LEAD_API_URL}/enrich`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+    });
+  } catch (err) {
+    return NextResponse.json(
+      {
+        message: `Failed to reach upstream API: ${err instanceof Error ? err.message : "unknown error"}`,
+      },
+      { status: 502 },
+    );
+  }
+
+  let data: unknown;
+  try {
+    data = await upstream.json();
+  } catch {
+    return NextResponse.json(
+      { message: `Upstream returned non-JSON response (${upstream.status})` },
+      { status: 502 },
+    );
+  }
+
   return NextResponse.json(data, { status: upstream.status });
 }

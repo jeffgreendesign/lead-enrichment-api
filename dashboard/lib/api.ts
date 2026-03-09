@@ -5,8 +5,6 @@
  * Keep them in sync manually when the Python models change.
  */
 
-export const LEAD_API_URL = process.env.LEAD_API_URL || "";
-
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type LoanType = "bridge_rtl" | "rental" | "unknown";
@@ -84,7 +82,7 @@ export async function enrichLead(
 export async function fetchStats(): Promise<PipelineStatsData> {
   const res = await fetch("/api/stats");
   if (!res.ok) {
-    throw new Error("Failed to fetch stats");
+    throw new Error(`Failed to fetch stats: ${res.status} ${res.statusText}`);
   }
   return res.json();
 }

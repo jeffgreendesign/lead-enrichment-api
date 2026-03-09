@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { fetchStats, type PipelineStatsData } from "@/lib/api";
+import type { PipelineStatsData } from "@/lib/api";
 
 function MetricCard({
   label,
@@ -18,13 +17,11 @@ function MetricCard({
   );
 }
 
-export default function PipelineStats() {
-  const [stats, setStats] = useState<PipelineStatsData | null>(null);
-
-  useEffect(() => {
-    fetchStats().then(setStats).catch(console.error);
-  }, []);
-
+export default function PipelineStats({
+  stats,
+}: {
+  stats: PipelineStatsData | null;
+}) {
   if (!stats) {
     return (
       <div className="grid grid-cols-2 gap-3">
@@ -48,11 +45,11 @@ export default function PipelineStats() {
         />
         <MetricCard
           label="Avg Input Tokens"
-          value={stats.avg_input_tokens || "—"}
+          value={stats.avg_input_tokens ?? "—"}
         />
         <MetricCard
           label="Avg Output Tokens"
-          value={stats.avg_output_tokens || "—"}
+          value={stats.avg_output_tokens ?? "—"}
         />
       </div>
       <p className="text-xs text-neutral-600">
