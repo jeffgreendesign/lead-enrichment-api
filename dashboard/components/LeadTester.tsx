@@ -14,15 +14,22 @@ const delay = (ms: number) =>
     : new Promise((r) => setTimeout(r, ms));
 
 export default function LeadTester() {
-  const { addResult, addLogEntry, updateLogEntryStatus, clearLog, logEntries } =
-    useEnrichment();
+  const {
+    addResult,
+    addLogEntry,
+    updateLogEntryStatus,
+    clearLog,
+    clearResults,
+    logEntries,
+  } = useEnrichment();
 
   const [selectedFixture, setSelectedFixture] = useState(
     FIXTURE_NAMES.length ? FIXTURE_NAMES[0] : "",
   );
+  const [variationIndex, setVariationIndex] = useState(0);
   const [json, setJson] = useState(
     JSON.stringify(
-      FIXTURE_NAMES.length ? FIXTURES[FIXTURE_NAMES[0]] : {},
+      FIXTURE_NAMES.length ? FIXTURES[FIXTURE_NAMES[0]][0] : {},
       null,
       2,
     ),
@@ -34,7 +41,8 @@ export default function LeadTester() {
 
   function handleFixtureChange(name: string) {
     setSelectedFixture(name);
-    setJson(JSON.stringify(FIXTURES[name], null, 2));
+    setVariationIndex(0);
+    setJson(JSON.stringify(FIXTURES[name][0], null, 2));
     setResult(null);
     setError(null);
   }
@@ -65,6 +73,14 @@ export default function LeadTester() {
         status: "success",
       });
       setLogExpanded(true);
+
+      // Advance to next variation
+      const variations = FIXTURES[selectedFixture];
+      if (variations) {
+        const nextIndex = (variationIndex + 1) % variations.length;
+        setVariationIndex(nextIndex);
+        setJson(JSON.stringify(variations[nextIndex], null, 2));
+      }
     } catch {
       setError("Invalid JSON in editor");
     }
@@ -73,6 +89,7 @@ export default function LeadTester() {
   async function handleSubmit() {
     setLogExpanded(true);
     clearLog();
+    clearResults();
     setLoading(true);
     setResult(null);
     setError(null);
@@ -163,6 +180,9 @@ export default function LeadTester() {
     }
   }
 
+  const variations = FIXTURES[selectedFixture];
+  const variationCount = variations?.length ?? 0;
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
@@ -173,18 +193,25 @@ export default function LeadTester() {
           >
             Fixture
           </label>
-          <select
-            id="fixture-select"
-            value={selectedFixture}
-            onChange={(e) => handleFixtureChange(e.target.value)}
-            className="w-full rounded border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm text-neutral-100 focus:border-blue-500 focus:outline-none"
-          >
-            {FIXTURE_NAMES.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2">
+            <select
+              id="fixture-select"
+              value={selectedFixture}
+              onChange={(e) => handleFixtureChange(e.target.value)}
+              className="w-full rounded border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm text-neutral-100 focus:border-blue-500 focus:outline-none"
+            >
+              {FIXTURE_NAMES.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+            {variationCount > 1 && (
+              <span className="shrink-0 text-xs tabular-nums text-neutral-500">
+                {variationIndex + 1}/{variationCount}
+              </span>
+            )}
+          </div>
         </div>
         <button
           onClick={handleLoadSample}
