@@ -89,7 +89,6 @@ export default function LeadTester() {
   async function handleSubmit() {
     setLogExpanded(true);
     clearLog();
-    clearResults();
     setLoading(true);
     setResult(null);
     setError(null);
@@ -107,10 +106,25 @@ export default function LeadTester() {
 
       await delay(200);
 
+      const required = ["lead_id", "first_name", "last_name", "email"] as const;
+      const missing = required.filter(
+        (f) => !payload[f] || (typeof payload[f] === "string" && !payload[f].trim()),
+      );
+
+      if (missing.length > 0) {
+        addLogEntry({
+          timestamp: new Date(),
+          message: `Missing required fields: ${missing.join(", ")}`,
+          status: "error",
+        });
+        setError(`Missing required fields: ${missing.join(", ")}`);
+        return;
+      }
+
       const fields = [
-        payload.lead_id && `lead_id: ${payload.lead_id}`,
-        payload.first_name && `name: ${payload.first_name} ${payload.last_name ?? ""}`.trim(),
-        payload.email && `email: ${payload.email}`,
+        `lead_id: ${payload.lead_id}`,
+        `name: ${payload.first_name} ${payload.last_name ?? ""}`.trim(),
+        `email: ${payload.email}`,
         payload.property_city &&
           `property: ${payload.property_city}, ${payload.property_state ?? ""}`.trim(),
         payload.loan_amount_requested &&
@@ -162,6 +176,7 @@ export default function LeadTester() {
         status: "success",
       });
 
+      clearResults();
       setResult(data);
       addResult(data);
     } catch (err) {
