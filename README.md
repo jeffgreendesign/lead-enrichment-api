@@ -78,6 +78,7 @@ lead-enrichment-api/
 │   ├── conftest.py              # Shared fixtures and test client setup
 │   ├── test_health.py           # Health endpoint tests
 │   ├── test_models.py           # Pydantic model validation tests
+│   ├── helpers.py                 # Test helper utilities
 │   ├── test_enrichment.py       # GCS write and dead-letter tests
 │   └── test_enrich_endpoint.py  # End-to-end /enrich integration tests
 ├── fixtures/                # Sample lead payloads for testing

@@ -47,4 +47,6 @@ The `/api/stats` route currently returns stub/empty data. It will be wired up on
 | `LeadTester` | Fixture selector + editable JSON textarea + enrichment runner |
 | `ClassificationResult` | Renders enriched response with badges, urgency pips, outreach card |
 | `PipelineStats` | Metric cards (total leads, avg urgency, token usage) |
+| `ProcessLog` | Collapsible log viewer with status indicators |
 | `RecentLeads` | Donut chart of loan type classification breakdown |
+| `StatsSection` | Grid layout containing PipelineStats + RecentLeads |

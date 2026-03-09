@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-03-09
+
+### Added
+
+- Next.js 16 dashboard with lead tester, classification viewer, and pipeline stats (`dashboard/`)
+- Client-side stats accumulation, sample data generator, and process log
+- Dashboard fixture variations (5 per theme, 35 total samples)
+- StatsSection and ProcessLog components
+
+### Fixed
+
+- Dashboard chart stability (stable log IDs, a11y improvements, state resets)
+- Client-side field validation and clearResults on success path
+
 ## [1.1.0] - 2026-03-08
 
 ### Added
