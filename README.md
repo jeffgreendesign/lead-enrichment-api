@@ -96,6 +96,11 @@ lead-enrichment-api/
 ├── Dockerfile               # Cloud Run-optimized, python:3.12-slim, non-root
 ├── pyproject.toml           # Dependencies, build config, ruff/pytest settings
 ├── .pre-commit-config.yaml  # Ruff, security, and standard hooks
+├── dashboard/                # Next.js dashboard (separate deployable → Vercel)
+│   ├── app/                  # App Router pages and API routes
+│   ├── components/           # React components
+│   ├── lib/                  # API client, types, fixture data
+│   └── README.md
 ├── .env.example
 ├── CHANGELOG.md
 └── README.md
@@ -325,7 +330,9 @@ Enriched leads are written to GCS on every successful `/enrich` call. Snowpipe a
   "metadata": {
     "enriched_at": "2026-03-07T09:15:42Z",
     "model": "claude-sonnet-4-6",
-    "schema_version": "1.0"
+    "schema_version": "1.0",
+    "input_tokens": 847,
+    "output_tokens": 215
   }
 }
 ```

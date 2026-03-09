@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Annotated
@@ -11,6 +12,8 @@ import anthropic
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.responses import Response
 
 from .enrichment import _write_to_gcs_failed, enrich_lead
 from .models import EnrichedLeadResponse, LeadWebhookPayload
@@ -20,6 +23,18 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s %(message)s",
 )
 logger = logging.getLogger(__name__)
+
+
+# ── Middleware ─────────────────────────────────────────────────────────────────
+
+
+class RequestIDMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+        request.state.request_id = request_id
+        response = await call_next(request)
+        response.headers["X-Request-ID"] = request_id
+        return response
 
 
 # ── App lifecycle ──────────────────────────────────────────────────────────────
@@ -46,6 +61,8 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+app.add_middleware(RequestIDMiddleware)
 
 
 # ── Dependencies ───────────────────────────────────────────────────────────────
@@ -99,9 +116,11 @@ async def health() -> dict[str, str]:
 async def enrich_lead_endpoint(
     payload: LeadWebhookPayload,
     client: AnthropicDep,
+    request: Request,
 ) -> EnrichedLeadResponse:
+    request_id: str = getattr(request.state, "request_id", "")
     try:
-        result = enrich_lead(payload, client)
+        result = enrich_lead(payload, client, request_id=request_id)
     except ValidationError:
         raise  # Propagate to exception handler → 422 ai_output_validation_failed
     except ValueError as e:

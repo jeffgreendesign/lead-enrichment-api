@@ -5,13 +5,15 @@ import logging
 from unittest.mock import MagicMock, patch
 
 import pytest
+from pydantic import ValidationError
 
-from src.lead_enrichment.enrichment import _write_to_gcs, _write_to_gcs_failed
+from src.lead_enrichment.enrichment import _write_to_gcs, _write_to_gcs_failed, enrich_lead
 from src.lead_enrichment.models import (
     EnrichedLeadResponse,
     EnrichmentMetadata,
     InvestorExperience,
     LeadWebhookPayload,
+    LLMClassification,
     LoanType,
 )
 
@@ -122,7 +124,8 @@ class TestWriteToGcs:
         _write_to_gcs(enriched_response)
 
         mock_client.bucket.assert_called_once_with("enrichment-bucket")
-        mock_bucket.blob.assert_called_once_with("leads/enriched-001.json")
+        expected_path = f"leads/enriched-001/{enriched_response.metadata.enriched_at}.json"
+        mock_bucket.blob.assert_called_once_with(expected_path)
         mock_blob.upload_from_string.assert_called_once()
 
         uploaded = json.loads(mock_blob.upload_from_string.call_args[0][0])
@@ -160,3 +163,97 @@ class TestWriteToGcs:
             _write_to_gcs(enriched_response)
 
         assert "GCS_ENRICHMENT_BUCKET not set" in caplog.text
+
+
+# ── enrich_lead() integration tests ──────────────────────────────────────────
+
+
+VALID_CLASSIFICATION = LLMClassification(
+    loan_type="bridge_rtl",
+    investor_experience="experienced",
+    urgency_score=4,
+    outreach_message=(
+        "Jane, with your timeline we can move fast — "
+        "our bridge product closes in as little as 10 business days."
+    ),
+    classification_rationale="Strong fix-and-flip signals with tight timeline.",
+)
+
+
+def _mock_parse_response(
+    classification: LLMClassification | None,
+    input_tokens: int = 200,
+    output_tokens: int = 80,
+) -> MagicMock:
+    """Build a mock ParsedMessage."""
+    message = MagicMock()
+    message.parsed_output = classification
+    message.usage = MagicMock(input_tokens=input_tokens, output_tokens=output_tokens)
+    if classification is None:
+        block = MagicMock()
+        block.text = "Sorry, I cannot classify this lead."
+        message.content = [block]
+    return message
+
+
+class TestEnrichLead:
+    @patch("src.lead_enrichment.enrichment._write_to_gcs")
+    def test_happy_path_returns_enriched_response(
+        self,
+        mock_gcs: MagicMock,
+        payload: LeadWebhookPayload,
+    ) -> None:
+        mock_client = MagicMock()
+        mock_client.messages.parse.return_value = _mock_parse_response(VALID_CLASSIFICATION)
+
+        result = enrich_lead(payload, mock_client)
+
+        assert isinstance(result, EnrichedLeadResponse)
+        assert result.lead_id == "dead-letter-001"
+        assert result.loan_type == LoanType.BRIDGE_RTL
+        assert result.investor_experience == InvestorExperience.EXPERIENCED
+        assert result.urgency_score == 4
+        assert result.outreach_message == VALID_CLASSIFICATION.outreach_message
+        assert result.metadata.input_tokens == 200
+        assert result.metadata.output_tokens == 80
+        mock_gcs.assert_called_once()
+
+    @patch("src.lead_enrichment.enrichment._write_to_gcs")
+    def test_unparseable_response_raises_value_error(
+        self,
+        mock_gcs: MagicMock,
+        payload: LeadWebhookPayload,
+    ) -> None:
+        mock_client = MagicMock()
+        mock_client.messages.parse.return_value = _mock_parse_response(None)
+
+        with pytest.raises(ValueError, match="unparseable"):
+            enrich_lead(payload, mock_client)
+
+        mock_gcs.assert_not_called()
+
+    @patch("src.lead_enrichment.enrichment._write_to_gcs_failed")
+    @patch("src.lead_enrichment.enrichment._write_to_gcs")
+    def test_governance_failure_writes_dead_letter_and_raises(
+        self,
+        mock_gcs: MagicMock,
+        mock_gcs_failed: MagicMock,
+        payload: LeadWebhookPayload,
+    ) -> None:
+        bad_classification = LLMClassification.model_construct(
+            loan_type="bridge_rtl",
+            investor_experience="experienced",
+            urgency_score=99,
+            outreach_message="Jane, let's talk about your next flip!",
+            classification_rationale="Strong signals.",
+        )
+        mock_client = MagicMock()
+        mock_client.messages.parse.return_value = _mock_parse_response(bad_classification)
+
+        with pytest.raises(ValidationError):
+            enrich_lead(payload, mock_client)
+
+        mock_gcs_failed.assert_called_once()
+        call_args = mock_gcs_failed.call_args
+        assert call_args[0][1] == "ai_governance_failure"
+        mock_gcs.assert_not_called()
