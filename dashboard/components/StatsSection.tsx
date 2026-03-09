@@ -20,6 +20,9 @@ export default function StatsSection() {
   if (error) {
     return (
       <div className="grid gap-8 md:grid-cols-2">
+        <div className="sr-only" role="alert" aria-live="assertive" aria-atomic="true">
+          {error}
+        </div>
         <section>
           <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-neutral-500">
             Classification Split

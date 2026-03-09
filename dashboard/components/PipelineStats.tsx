@@ -25,6 +25,9 @@ export default function PipelineStats({
   if (!stats) {
     return (
       <div className="grid grid-cols-2 gap-3">
+        <div className="sr-only" role="status" aria-live="polite">
+          Loading pipeline statistics…
+        </div>
         {[1, 2, 3, 4].map((i) => (
           <div
             key={i}

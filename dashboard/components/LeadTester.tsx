@@ -10,7 +10,11 @@ export default function LeadTester() {
     FIXTURE_NAMES.length ? FIXTURE_NAMES[0] : "",
   );
   const [json, setJson] = useState(
-    JSON.stringify(FIXTURES[FIXTURE_NAMES[0]] ?? {}, null, 2),
+    JSON.stringify(
+      FIXTURE_NAMES.length ? FIXTURES[FIXTURE_NAMES[0]] : {},
+      null,
+      2,
+    ),
   );
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<EnrichedLeadResponse | null>(null);

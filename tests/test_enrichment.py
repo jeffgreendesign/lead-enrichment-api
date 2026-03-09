@@ -170,8 +170,8 @@ class TestWriteToGcs:
 
 
 VALID_CLASSIFICATION = LLMClassification(
-    loan_type="bridge_rtl",
-    investor_experience="experienced",
+    loan_type=LoanType.BRIDGE_RTL,
+    investor_experience=InvestorExperience.EXPERIENCED,
     urgency_score=4,
     outreach_message=(
         "Jane, with your timeline we can move fast — "
@@ -224,6 +224,26 @@ class TestEnrichLead:
         call_args = mock_gcs_failed.call_args
         assert call_args[0][0] == payload
         assert call_args[0][1] == "llm_parse_error"
+
+    @patch("src.lead_enrichment.enrichment._write_to_gcs")
+    def test_request_id_threaded_into_log_records(
+        self,
+        mock_gcs: MagicMock,
+        payload: LeadWebhookPayload,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        mock_client = MagicMock()
+        mock_client.messages.parse.return_value = mock_parse_response(
+            VALID_CLASSIFICATION, input_tokens=200, output_tokens=80
+        )
+
+        with caplog.at_level(logging.INFO):
+            enrich_lead(payload, mock_client, request_id="test-correlation-123")
+
+        records_with_id = [
+            r for r in caplog.records if getattr(r, "request_id", None) == "test-correlation-123"
+        ]
+        assert len(records_with_id) >= 1
 
     @patch("src.lead_enrichment.enrichment._write_to_gcs_failed")
     @patch("src.lead_enrichment.enrichment._write_to_gcs")

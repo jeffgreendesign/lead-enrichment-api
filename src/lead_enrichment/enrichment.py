@@ -145,7 +145,9 @@ def enrich_lead(
         raise ValueError(f"LLM returned unparseable output: {raw_text[:500]}")
 
     try:
-        # Re-validate to enforce Pydantic governance rules (e.g. placeholder detection)
+        # Defense-in-depth: round-trip through model_validate to enforce Pydantic
+        # field validators (no_placeholder_text, validate_urgency, etc.) even if
+        # the SDK's messages.parse() changes how it constructs the output model.
         classification = LLMClassification.model_validate(classification.model_dump())
     except ValidationError:
         _write_to_gcs_failed(payload, "ai_governance_failure", str(classification.model_dump()))
