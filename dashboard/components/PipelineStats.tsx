@@ -1,5 +1,3 @@
-"use client";
-
 import type { PipelineStatsData } from "@/lib/api";
 
 function MetricCard({

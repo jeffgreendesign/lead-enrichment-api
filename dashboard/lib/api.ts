@@ -79,8 +79,10 @@ export async function enrichLead(
   return res.json();
 }
 
-export async function fetchStats(): Promise<PipelineStatsData> {
-  const res = await fetch("/api/stats");
+export async function fetchStats(
+  signal?: AbortSignal,
+): Promise<PipelineStatsData> {
+  const res = await fetch("/api/stats", { signal });
   if (!res.ok) {
     throw new Error(`Failed to fetch stats: ${res.status} ${res.statusText}`);
   }

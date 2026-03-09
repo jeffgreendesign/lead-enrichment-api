@@ -10,11 +10,14 @@ export default function StatsSection() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchStats()
+    const controller = new AbortController();
+    fetchStats(controller.signal)
       .then(setStats)
       .catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
         setError(err instanceof Error ? err.message : "Failed to load stats");
       });
+    return () => controller.abort();
   }, []);
 
   if (error) {
