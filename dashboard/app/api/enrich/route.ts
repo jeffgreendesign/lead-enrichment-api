@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const LEAD_API_URL = process.env.LEAD_API_URL;
+const LEAD_API_URL = process.env.LEAD_API_URL?.replace(/\/+$/, "");
 
 function withRequestId(
   response: NextResponse,

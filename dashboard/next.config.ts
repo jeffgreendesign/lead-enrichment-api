@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   async rewrites() {
-    const apiUrl = process.env.LEAD_API_URL;
+    const apiUrl = process.env.LEAD_API_URL?.replace(/\/+$/, "");
     if (!apiUrl) {
       console.warn("LEAD_API_URL is not set — /docs will not proxy to the API");
       return [];
