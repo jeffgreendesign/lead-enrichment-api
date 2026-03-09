@@ -1,58 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { fetchStats, type PipelineStatsData } from "@/lib/api";
+import { useEnrichment } from "@/lib/EnrichmentContext";
 import PipelineStats from "./PipelineStats";
 import RecentLeads from "./RecentLeads";
 
 export default function StatsSection() {
-  const [stats, setStats] = useState<PipelineStatsData | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    fetchStats(controller.signal)
-      .then(setStats)
-      .catch((err: unknown) => {
-        if (err instanceof DOMException && err.name === "AbortError") return;
-        setError(err instanceof Error ? err.message : "Failed to load stats");
-      });
-    return () => controller.abort();
-  }, []);
-
-  if (error) {
-    return (
-      <div className="grid gap-8 md:grid-cols-2">
-        <div className="sr-only" role="alert" aria-live="assertive" aria-atomic="true">
-          {error}
-        </div>
-        <section>
-          <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-neutral-500">
-            Classification Split
-          </h2>
-          <div className="rounded-lg border border-red-800 bg-red-950 p-6 text-sm text-red-300">
-            {error}
-          </div>
-        </section>
-
-        <section>
-          <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-neutral-500">
-            Pipeline Stats
-          </h2>
-          <div className="rounded-lg border border-red-800 bg-red-950 p-6 text-sm text-red-300">
-            {error}
-          </div>
-        </section>
-      </div>
-    );
-  }
+  const { stats, results, clearResults } = useEnrichment();
 
   return (
     <div className="grid gap-8 md:grid-cols-2">
       <section>
-        <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-neutral-500">
-          Classification Split
-        </h2>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-sm font-medium uppercase tracking-wider text-neutral-500">
+            Classification Split
+          </h2>
+          {results.length > 0 && (
+            <button
+              onClick={clearResults}
+              className="text-xs text-neutral-600 transition-colors hover:text-neutral-400"
+            >
+              Clear
+            </button>
+          )}
+        </div>
         <RecentLeads stats={stats} />
       </section>
 

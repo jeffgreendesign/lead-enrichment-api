@@ -3,9 +3,17 @@
 import { useState } from "react";
 import { FIXTURES, FIXTURE_NAMES } from "@/lib/fixtures";
 import { enrichLead, type EnrichedLeadResponse } from "@/lib/api";
+import { useEnrichment } from "@/lib/EnrichmentContext";
+import { generateSampleResult } from "@/lib/sampleData";
 import ClassificationResult from "./ClassificationResult";
+import ProcessLog from "./ProcessLog";
+
+const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export default function LeadTester() {
+  const { addResult, addLogEntry, updateLogEntryStatus, clearLog, logEntries } =
+    useEnrichment();
+
   const [selectedFixture, setSelectedFixture] = useState(
     FIXTURE_NAMES.length ? FIXTURE_NAMES[0] : "",
   );
@@ -19,6 +27,7 @@ export default function LeadTester() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<EnrichedLeadResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [logExpanded, setLogExpanded] = useState(false);
 
   function handleFixtureChange(name: string) {
     setSelectedFixture(name);
@@ -27,17 +36,123 @@ export default function LeadTester() {
     setError(null);
   }
 
+  function handleLoadSample() {
+    try {
+      const payload = JSON.parse(json);
+      const sample = generateSampleResult(payload);
+      addResult(sample);
+      setResult(sample);
+
+      clearLog();
+      addLogEntry({
+        timestamp: new Date(),
+        message: `Sample generated for ${payload.first_name ?? "lead"} ${payload.last_name ?? ""} (${payload.lead_id ?? "unknown"})`,
+        status: "success",
+      });
+      addLogEntry({
+        timestamp: new Date(),
+        message: `Classification: ${sample.loan_type} / ${sample.investor_experience} / urgency ${sample.urgency_score}/5`,
+        status: "success",
+      });
+      addLogEntry({
+        timestamp: new Date(),
+        message: "Result added to pipeline stats",
+        status: "success",
+      });
+      setLogExpanded(true);
+    } catch {
+      setError("Invalid JSON in editor");
+    }
+  }
+
   async function handleSubmit() {
+    setLogExpanded(true);
+    clearLog();
     setLoading(true);
     setResult(null);
     setError(null);
 
+    let sendingIdx = -1;
+    let waitingIdx = -1;
+
     try {
       const payload = JSON.parse(json);
+      addLogEntry({
+        timestamp: new Date(),
+        message: "Parsing lead payload...",
+        status: "success",
+      });
+
+      await delay(200);
+
+      const fields = [
+        payload.lead_id && `lead_id: ${payload.lead_id}`,
+        payload.first_name && `name: ${payload.first_name} ${payload.last_name ?? ""}`.trim(),
+        payload.email && `email: ${payload.email}`,
+        payload.property_city &&
+          `property: ${payload.property_city}, ${payload.property_state ?? ""}`.trim(),
+        payload.loan_amount_requested &&
+          `amount: $${Number(payload.loan_amount_requested).toLocaleString()}`,
+      ].filter(Boolean);
+
+      addLogEntry({
+        timestamp: new Date(),
+        message: `Validating input fields (${fields.join(", ")})`,
+        status: "success",
+      });
+
+      await delay(300);
+      sendingIdx = addLogEntry({
+        timestamp: new Date(),
+        message: "Sending to enrichment API...",
+        status: "pending",
+      });
+
+      await delay(200);
+      waitingIdx = addLogEntry({
+        timestamp: new Date(),
+        message: "Waiting for LLM classification (model: claude-sonnet-4-6)...",
+        status: "pending",
+      });
+
       const data = await enrichLead(payload);
+
+      updateLogEntryStatus(sendingIdx, "success");
+      updateLogEntryStatus(waitingIdx, "success");
+
+      addLogEntry({
+        timestamp: new Date(),
+        message: `Received response (${data.metadata.input_tokens ?? "?"} input tokens, ${data.metadata.output_tokens ?? "?"} output tokens)`,
+        status: "success",
+      });
+
+      await delay(100);
+      addLogEntry({
+        timestamp: new Date(),
+        message: "Validating classification schema...",
+        status: "success",
+      });
+
+      await delay(100);
+      addLogEntry({
+        timestamp: new Date(),
+        message: `Enrichment complete — loan_type: ${data.loan_type}, urgency: ${data.urgency_score}/5`,
+        status: "success",
+      });
+
       setResult(data);
+      addResult(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
+      if (sendingIdx >= 0) updateLogEntryStatus(sendingIdx, "error");
+      if (waitingIdx >= 0) updateLogEntryStatus(waitingIdx, "error");
+
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      addLogEntry({
+        timestamp: new Date(),
+        message: `Error: ${msg}`,
+        status: "error",
+      });
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -67,6 +182,13 @@ export default function LeadTester() {
           </select>
         </div>
         <button
+          onClick={handleLoadSample}
+          disabled={loading}
+          className="rounded border border-neutral-700 bg-neutral-800 px-4 py-2 text-sm font-medium text-neutral-300 transition-colors hover:bg-neutral-700 hover:text-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Load Sample Data
+        </button>
+        <button
           onClick={handleSubmit}
           disabled={loading}
           className="rounded bg-blue-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -84,6 +206,12 @@ export default function LeadTester() {
         onChange={(e) => setJson(e.target.value)}
         rows={12}
         className="w-full rounded border border-neutral-700 bg-neutral-800 p-4 font-mono text-xs text-neutral-300 focus:border-blue-500 focus:outline-none"
+      />
+
+      <ProcessLog
+        entries={logEntries}
+        isExpanded={logExpanded}
+        onToggle={() => setLogExpanded(!logExpanded)}
       />
 
       {error && (
