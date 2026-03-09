@@ -141,6 +141,7 @@ def enrich_lead(
     if classification is None:
         first_block = response.content[0] if response.content else None
         raw_text = getattr(first_block, "text", "<empty>")
+        _write_to_gcs_failed(payload, "llm_parse_error", raw_text[:500])
         raise ValueError(f"LLM returned unparseable output: {raw_text[:500]}")
 
     try:

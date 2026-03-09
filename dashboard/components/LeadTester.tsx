@@ -71,7 +71,11 @@ export default function LeadTester() {
         </button>
       </div>
 
+      <label htmlFor="json-input" className="sr-only">
+        Test payload JSON
+      </label>
       <textarea
+        id="json-input"
         value={json}
         onChange={(e) => setJson(e.target.value)}
         rows={12}

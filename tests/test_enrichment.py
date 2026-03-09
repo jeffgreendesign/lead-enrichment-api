@@ -205,10 +205,12 @@ class TestEnrichLead:
         assert result.metadata.output_tokens == 80
         mock_gcs.assert_called_once()
 
+    @patch("src.lead_enrichment.enrichment._write_to_gcs_failed")
     @patch("src.lead_enrichment.enrichment._write_to_gcs")
     def test_unparseable_response_raises_value_error(
         self,
         mock_gcs: MagicMock,
+        mock_gcs_failed: MagicMock,
         payload: LeadWebhookPayload,
     ) -> None:
         mock_client = MagicMock()
@@ -218,6 +220,10 @@ class TestEnrichLead:
             enrich_lead(payload, mock_client)
 
         mock_gcs.assert_not_called()
+        mock_gcs_failed.assert_called_once()
+        call_args = mock_gcs_failed.call_args
+        assert call_args[0][0] == payload
+        assert call_args[0][1] == "llm_parse_error"
 
     @patch("src.lead_enrichment.enrichment._write_to_gcs_failed")
     @patch("src.lead_enrichment.enrichment._write_to_gcs")

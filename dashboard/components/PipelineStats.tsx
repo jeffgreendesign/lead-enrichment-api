@@ -41,7 +41,7 @@ export default function PipelineStats({
         <MetricCard label="Total Leads" value={stats.total_leads} />
         <MetricCard
           label="Avg Urgency"
-          value={stats.avg_urgency ? stats.avg_urgency.toFixed(1) : "—"}
+          value={stats.avg_urgency != null ? stats.avg_urgency.toFixed(1) : "—"}
         />
         <MetricCard
           label="Avg Input Tokens"

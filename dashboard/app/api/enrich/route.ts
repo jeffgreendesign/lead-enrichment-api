@@ -28,20 +28,32 @@ export async function POST(request: Request) {
     headers["X-Request-ID"] = requestId;
   }
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
+
   let upstream: Response;
   try {
     upstream = await fetch(`${LEAD_API_URL}/enrich`, {
       method: "POST",
       headers,
       body: JSON.stringify(body),
+      signal: controller.signal,
     });
   } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      return NextResponse.json(
+        { message: "Upstream API request timed out" },
+        { status: 504 },
+      );
+    }
     return NextResponse.json(
       {
         message: `Failed to reach upstream API: ${err instanceof Error ? err.message : "unknown error"}`,
       },
       { status: 502 },
     );
+  } finally {
+    clearTimeout(timeout);
   }
 
   let data: unknown;
