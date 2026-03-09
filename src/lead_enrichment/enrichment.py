@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 
 import anthropic
 from google.cloud import storage
+from pydantic import ValidationError
 
 from .models import (
     EnrichedLeadResponse,
@@ -19,7 +20,21 @@ from .prompts import SYSTEM_PROMPT, build_user_prompt
 logger = logging.getLogger(__name__)
 
 MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
-MAX_TOKENS = 512
+
+_DEFAULT_MAX_TOKENS = 512
+_raw_max_tokens = os.getenv("ANTHROPIC_MAX_TOKENS")
+try:
+    MAX_TOKENS = int(_raw_max_tokens) if _raw_max_tokens else _DEFAULT_MAX_TOKENS
+    if MAX_TOKENS <= 0:
+        raise ValueError("must be positive")
+except (ValueError, TypeError):
+    logger.warning(
+        "Invalid ANTHROPIC_MAX_TOKENS=%r, falling back to %d",
+        _raw_max_tokens,
+        _DEFAULT_MAX_TOKENS,
+    )
+    MAX_TOKENS = _DEFAULT_MAX_TOKENS
+
 GCS_FAILED_LEADS_BUCKET = os.getenv("GCS_FAILED_LEADS_BUCKET")
 GCS_ENRICHMENT_BUCKET = os.getenv("GCS_ENRICHMENT_BUCKET")
 
@@ -76,7 +91,7 @@ def _write_to_gcs(response: EnrichedLeadResponse) -> None:
         return
 
     try:
-        blob_path = f"leads/{response.lead_id}.json"
+        blob_path = f"leads/{response.lead_id}/{response.metadata.enriched_at}.json"
         client = storage.Client()
         bucket = client.bucket(GCS_ENRICHMENT_BUCKET)
         blob = bucket.blob(blob_path)
@@ -98,43 +113,54 @@ def _write_to_gcs(response: EnrichedLeadResponse) -> None:
         )
 
 
-def _parse_llm_response(raw_text: str) -> LLMClassification:
-    """
-    Parse and validate the LLM's JSON response against LLMClassification.
-    Raises ValidationError if the output doesn't conform — this is intentional.
-    That exception surfaces as a 422 to the caller, signalling AI governance failure.
-    """
-    try:
-        data = json.loads(raw_text.strip())
-    except json.JSONDecodeError as e:
-        raise ValueError(f"LLM returned non-JSON output: {e}\n\nRaw: {raw_text[:500]}")
-
-    return LLMClassification.model_validate(data)
-
-
 def enrich_lead(
     payload: LeadWebhookPayload,
     client: anthropic.Anthropic,
+    *,
+    request_id: str | None = None,
 ) -> EnrichedLeadResponse:
     lead_dict = payload.model_dump(exclude_none=True)
     user_prompt = build_user_prompt(lead_dict)
 
-    logger.info("Sending lead %s to %s for classification", payload.lead_id, MODEL)
+    logger.info(
+        "Sending lead %s to %s for classification",
+        payload.lead_id,
+        MODEL,
+        extra={"request_id": request_id},
+    )
 
-    response = client.messages.create(
+    response = client.messages.parse(
         model=MODEL,
         max_tokens=MAX_TOKENS,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user_prompt}],
+        output_format=LLMClassification,
     )
 
-    block = response.content[0]
-    if not hasattr(block, "text"):
-        raise ValueError(f"Expected TextBlock, got {type(block).__name__}")
-    raw_text: str = block.text
-    logger.debug("Raw LLM response for lead %s: %s", payload.lead_id, raw_text)
+    classification = response.parsed_output
+    if classification is None:
+        first_block = response.content[0] if response.content else None
+        raw_text = getattr(first_block, "text", "<empty>")
+        _write_to_gcs_failed(payload, "llm_parse_error", raw_text[:500])
+        raise ValueError(f"LLM returned unparseable output: {raw_text[:500]}")
 
-    classification = _parse_llm_response(raw_text)
+    try:
+        # Defense-in-depth: round-trip through model_validate to enforce Pydantic
+        # field validators (no_placeholder_text, validate_urgency, etc.) even if
+        # the SDK's messages.parse() changes how it constructs the output model.
+        classification = LLMClassification.model_validate(classification.model_dump())
+    except ValidationError:
+        _write_to_gcs_failed(payload, "ai_governance_failure", str(classification.model_dump()))
+        raise
+
+    logger.info(
+        "Classified lead %s as %s/%s (urgency=%d)",
+        payload.lead_id,
+        classification.loan_type,
+        classification.investor_experience,
+        classification.urgency_score,
+        extra={"request_id": request_id},
+    )
 
     result = EnrichedLeadResponse(
         lead_id=payload.lead_id,
@@ -147,7 +173,11 @@ def enrich_lead(
         urgency_score=classification.urgency_score,
         outreach_message=classification.outreach_message,
         classification_rationale=classification.classification_rationale,
-        metadata=EnrichmentMetadata(model=MODEL),
+        metadata=EnrichmentMetadata(
+            model=MODEL,
+            input_tokens=response.usage.input_tokens,
+            output_tokens=response.usage.output_tokens,
+        ),
     )
     _write_to_gcs(result)
     return result

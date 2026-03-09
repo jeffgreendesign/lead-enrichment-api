@@ -227,7 +227,18 @@ These choices are intentional. Do not suggest alternatives unless explicitly ask
 |--------------------|----------|----------------------|----------------------------|
 | `ANTHROPIC_API_KEY`| Yes      | —                    | Anthropic API key          |
 | `ANTHROPIC_MODEL`  | No       | `claude-sonnet-4-6`  | Model for LLM inference    |
+| `ANTHROPIC_MAX_TOKENS` | No   | `512`                | Max tokens for LLM response |
 | `LOG_LEVEL`        | No       | `INFO`               | Python logging level       |
 | `PORT`             | No       | `8080`               | Server port (Cloud Run)    |
 | `GCS_FAILED_LEADS_BUCKET` | No | —               | GCS bucket for dead-letter failed leads |
 | `GCS_ENRICHMENT_BUCKET` | No | —                  | GCS bucket for enriched lead output (Snowpipe source) |
+
+## Dashboard
+
+The `dashboard/` directory contains a standalone Next.js app deployed to Vercel. It provides a lead tester UI, classification result viewer, and pipeline stats.
+
+**Stack:** Next.js 16, React 19, TypeScript, Tailwind CSS v4, Recharts
+
+See [`dashboard/README.md`](dashboard/README.md) for setup and deployment instructions.
+
+The dashboard is a separate deployable — Python tooling does not reference `dashboard/` and vice versa.

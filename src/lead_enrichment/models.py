@@ -69,7 +69,8 @@ class LLMClassification(BaseModel):
         description="One-line personalized outreach message for this lead",
     )
     classification_rationale: str = Field(
-        description="Brief explanation of why these classifications were assigned"
+        max_length=500,
+        description="Brief explanation of why these classifications were assigned",
     )
 
     @field_validator("urgency_score")
@@ -98,6 +99,8 @@ class EnrichmentMetadata(BaseModel):
     )
     model: str
     schema_version: str = "1.0"
+    input_tokens: int | None = None
+    output_tokens: int | None = None
 
 
 class EnrichedLeadResponse(BaseModel):
