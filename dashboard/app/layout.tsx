@@ -29,7 +29,7 @@ export default function RootLayout({
                 GitHub
               </a>
               <a
-                href={`${process.env.LEAD_API_URL || ""}/docs`}
+                href="/docs"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-neutral-100 transition-colors"
