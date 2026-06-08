@@ -1,16 +1,77 @@
 version: 2
 updates:
-  - package-ecosystem: pip
-    directory: /
+  - package-ecosystem: "pip"
+    directory: "/"
     schedule:
-      interval: weekly
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/New_York"
+    open-pull-requests-limit: 3
+    cooldown:
+      default-days: 7
+      semver-major-days: 30
+      semver-minor-days: 14
+      semver-patch-days: 3
+      include:
+        - "*"
+    groups:
+      pip-production:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+      pip-major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
 
-  - package-ecosystem: npm
-    directory: /dashboard
+  - package-ecosystem: "npm"
+    directory: "/dashboard"
     schedule:
-      interval: weekly
+      interval: "weekly"
+      day: "monday"
+      time: "09:15"
+      timezone: "America/New_York"
+    open-pull-requests-limit: 3
+    cooldown:
+      default-days: 7
+      semver-major-days: 30
+      semver-minor-days: 14
+      semver-patch-days: 3
+      include:
+        - "*"
+    groups:
+      npm-production:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+      npm-development:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+      npm-major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
 
-  - package-ecosystem: github-actions
-    directory: /
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
-      interval: weekly
+      interval: "weekly"
+      day: "monday"
+      time: "09:30"
+      timezone: "America/New_York"
+    open-pull-requests-limit: 2
+    cooldown:
+      default-days: 7
+      include:
+        - "*"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
